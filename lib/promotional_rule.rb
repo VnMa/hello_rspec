@@ -27,7 +27,7 @@ class PromotionalRule
 
   def self.product_quantity_applied(rules, product, quantity)
     rules.select do |r| 
-      r.type == 'product_quantity' && r.rule[:product_code] == product.product_code && r.rule[:min_quantiy].to_i <= quantity
+      r.type == 'product_quantity' && r.rule[:product_code] == product[:product_code] && r.rule[:min_quantiy].to_i <= quantity
     end.first
   end
 

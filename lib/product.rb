@@ -20,4 +20,12 @@ class Product
     def self.get(product_code) 
         product_list[product_code]
     end
+
+    def to_json
+        {
+            product_code: @product_code,
+            name: @name,
+            price: @price
+        }
+    end
 end

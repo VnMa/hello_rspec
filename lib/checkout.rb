@@ -12,26 +12,14 @@ class Checkout
 
   def scan(product_code)
     @products.push(Product.get(product_code))
-    # Calculate total based on promotional rules
   end
 
-
   def total
-    products_count = Hash.new
-    products_map = Hash.new
     rules = @promotional_rules
-    
-    @products.each do |p|
-      code = p.product_code
-      prd = products_count[code]
-      products_count[code] = prd.nil? ? 1 : (prd + 1)
-      products_map[code] = p
-    end
-
     total = 0
-    products_map.each do |code, product|
-      count = products_count[code]
-      pprice = calculate_product_price(product, count, rules)
+    count_products(@products).each do |_, product_w_count|
+      count = product_w_count[:quantity]
+      pprice = calculate_product_price(product_w_count, rules)
       total += (pprice  * count.to_i)
     end
 
@@ -39,15 +27,20 @@ class Checkout
   end
 
   private 
-  def calculate_product_price(product, quantity, rules)
-    price = product.price 
-    product_promotion = PromotionalRule.product_quantity_applied(rules, product, quantity)
-    
-    # Apply rule
-    unless product_promotion.nil?
-      return product_promotion.rule[:price]
+  def count_products(products)
+    products.reduce(Hash.new) do |acc, p|
+      code = p.product_code
+      count = acc[code].nil? ? 1 : acc[code][:quantity].to_i + 1
+      prd = p.to_json.merge(quantity: count)
+      acc.merge(Hash[code, prd])
     end
-    return price
+  end
+
+  def calculate_product_price(product, rules)
+    price = product[:price]
+    quantity = product[:quantity]
+    product_promotion = PromotionalRule.product_quantity_applied(rules, product, quantity)
+    product_promotion.nil? ? price : product_promotion.rule[:price]
   end
 
   def calculate_total_discount(total, rules)
